@@ -1,0 +1,76 @@
+version: "3.8"
+
+services:
+  eureka:
+    image: 241174/gateway-eureka:latest
+    mem_limit: 2048m
+    ports:
+      - "8761:8761"
+         
+  account:
+    image: 241174/gateway-account:latest
+    mem_limit: 2048m
+    ports:
+      - "8080:8080"
+    depends_on:
+       - eureka
+       - card
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+        max_attempts: 3
+        window: 120s
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+  loans:
+    image: 241174/gateway-loans:latest
+    mem_limit: 2048m
+    ports:
+      - "8082:8082"
+    depends_on:
+       - eureka
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+        max_attempts: 3
+        window: 120s
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+  card:
+    image: 241174/gateway-card:latest
+    mem_limit: 2048m
+    ports:
+      - "8081:8081"
+    depends_on:
+       - eureka
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+        max_attempts: 3
+        window: 120s
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+    
+  gateway:
+    image: 241174/gateway-apigateway:latest
+    mem_limit: 2048m
+    ports:
+      - "8074:8074"
+    depends_on:
+      - eureka
+      - card
+      - loans
+      - account
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 45s
+        max_attempts: 3
+        window: 180s
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      
+    
