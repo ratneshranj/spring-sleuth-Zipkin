@@ -1,17 +1,33 @@
 version: "3.8"
 
 services:
+
+  zipkin:
+    image: openzipkin/zipkin
+    mem_limit: 2048m
+    ports:
+      - "9411:9411"
+    networks:
+     - bank
   eureka:
-    image: 241174/gateway-eureka:latest
+    image: 241174/slueth-zipkin-eureka:latest
     mem_limit: 2048m
     ports:
       - "8761:8761"
-         
+    networks:
+     - bank 
+    depends_on:
+      - zipkin 
+    environment:
+      SPRING_ZIPKIN_BASEURL: http://zipkin:9411/ 
+      - "SPRINGPROFILES=actuator"      
   account:
-    image: 241174/gateway-account:latest
+    image: 241174/slueth-zipkin-account:latest
     mem_limit: 2048m
     ports:
       - "8080:8080"
+    networks:
+     - bank
     depends_on:
        - eureka
        - card
@@ -20,14 +36,17 @@ services:
         condition: on-failure
         delay: 30s
         max_attempts: 3
-        window: 120s
+        window: 120s    
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_ZIPKIN_BASEURL: http://zipkin:9411/
   loans:
-    image: 241174/gateway-loans:latest
+    image: 241174/slueth-zipkin-loans:latest
     mem_limit: 2048m
     ports:
       - "8082:8082"
+    networks:
+     - bank
     depends_on:
        - eureka
     deploy:
@@ -35,14 +54,17 @@ services:
         condition: on-failure
         delay: 30s
         max_attempts: 3
-        window: 120s
+        window: 120s    
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_ZIPKIN_BASEURL: http://zipkin:9411/
   card:
-    image: 241174/gateway-card:latest
+    image: 241174/slueth-zipkin-card:latest
     mem_limit: 2048m
     ports:
       - "8081:8081"
+    networks:
+     - bank
     depends_on:
        - eureka
     deploy:
@@ -50,15 +72,18 @@ services:
         condition: on-failure
         delay: 30s
         max_attempts: 3
-        window: 120s
+        window: 120s    
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_ZIPKIN_BASEURL: http://zipkin:9411/
     
   gateway:
-    image: 241174/gateway-apigateway:latest
+    image: 241174/slueth-zipkin-gateway:latest
     mem_limit: 2048m
     ports:
       - "8074:8074"
+    networks:
+     - bank
     depends_on:
       - eureka
       - card
@@ -69,8 +94,10 @@ services:
         condition: on-failure
         delay: 45s
         max_attempts: 3
-        window: 180s
+        window: 180s    
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
-      
+      SPRING_ZIPKIN_BASEURL: http://zipkin:9411/
+networks:
+    bank:     
     
